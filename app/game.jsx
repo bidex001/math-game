@@ -1,17 +1,22 @@
 import { View, Text,Animated,Easing, TouchableOpacity,ImageBackground,Image,Dimensions, DevSettings } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useState,useEffect,useRef } from 'react'
+import { useState,useEffect,useRef, useCallback } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Circle } from 'react-native-svg'
 import * as Updates from 'expo-updates'
 import { router, useLocalSearchParams } from 'expo-router'
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Audio } from 'expo-av';
+import { useFocusEffect } from '@react-navigation/native';
+import { ensureSoundPreferenceLoaded, playMusic, stopIfKey, stopAll } from '../hooks/audioManager'
 
 
 // await Updates.reloadAsync()
 
 const HIGH_SCORE_KEY = 'highScore'
+const GAME_MUSIC_KEY = 'game'
+const END_MUSIC_KEY = 'end'
+const GAME_MUSIC_ASSET = require('../assets/sound/music2.mp3')
+const END_MUSIC_ASSET = require('../assets/sound/music3.mp3')
 
 const DIFFICULTY_CONFIG = {
     easy: { seconds: 20, ops: ["+","-"] },
@@ -244,53 +249,32 @@ useEffect(() => {
 }, [ wasCorrect])
 
 
-const gameMusicRef = useRef(null);
-const endMusicRef = useRef(null);
+useFocusEffect(
+  useCallback(() => {
+    let isActive = true
+    const syncMusic = async () => {
+      const enabled = await ensureSoundPreferenceLoaded()
+      if (!isActive) return
+      if (!enabled) {
+        await stopAll()
+        return
+      }
+      if (end) {
+        await playMusic(END_MUSIC_KEY, END_MUSIC_ASSET)
+      } else {
+        await playMusic(GAME_MUSIC_KEY, GAME_MUSIC_ASSET)
+      }
+    }
 
-const startGameMusic = async () => {
-  if (gameMusicRef.current) return;
-  try {
-    const { sound } = await Audio.Sound.createAsync(
-      require('../assets/sound/music2.mp3'),
-      { isLooping: true, shouldPlay: true }
-    );
-    gameMusicRef.current = sound;
-  } catch (e) {
-    console.log('Game music error', e);
-  }
-};
+    syncMusic()
 
-const startEndMusic = async () => {
-  if (endMusicRef.current) return;
-  try {
-    const { sound } = await Audio.Sound.createAsync(
-      require('../assets/sound/music3.mp3'),
-      { isLooping: true, shouldPlay: true }
-    );
-    endMusicRef.current = sound;
-  } catch (e) {
-    console.log('End music error', e);
-  }
-};
-
-useEffect(() => {
-  startGameMusic();
-  return () => {
-    gameMusicRef.current?.unloadAsync();
-    gameMusicRef.current = null;
-    endMusicRef.current?.unloadAsync();
-    endMusicRef.current = null;
-  };
-}, []);
-
-useEffect(() => {
-  if (end) {
-    gameMusicRef.current?.stopAsync();
-    startEndMusic();
-  } else {
-    endMusicRef.current?.stopAsync();
-  }
-}, [end]);
+    return () => {
+      isActive = false
+      void stopIfKey(GAME_MUSIC_KEY)
+      void stopIfKey(END_MUSIC_KEY)
+    }
+  }, [end])
+)
 
 
 

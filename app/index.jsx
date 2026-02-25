@@ -5,11 +5,13 @@ import { useRef,useEffect, useState, useCallback } from 'react';
 import { Link, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from '@react-navigation/native';
-import { Platform } from 'react-native';
-import { Audio } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
+import { ensureSoundPreferenceLoaded, toggleSoundPreference, playMusic, stopIfKey, stopAll } from '../hooks/audioManager'
 
 
 const HIGH_SCORE_KEY = 'highScore'
+const INDEX_MUSIC_KEY = 'index'
+const INDEX_MUSIC_ASSET = require('../assets/sound/music1.mp3')
 
 const Index = () => {
     const scale = useRef(new Animated.Value(1)).current;
@@ -18,6 +20,7 @@ const Index = () => {
     const [difficulty, setDifficulty] = useState('easy');
     const [hardUnlocked, setHardUnlocked] = useState(false);
     const [highScore, setHighScore] = useState(0);
+    const [soundEnabled, setSoundEnabled] = useState(true)
 
     const speedUpScale = speedUp.interpolate({
       inputRange: [0, 1],
@@ -70,27 +73,38 @@ useFocusEffect(
 );
 
 
-const indexMusic = useRef(null)
-async function startMusic(){
-  if(indexMusic.current) return;
-  try {
-    const {sound} = await Audio.Sound.createAsync(
-      require('../assets/sound/music1.mp3'),
-      {isLooping:true,shouldPlay:true}
-    )
-    indexMusic.current = sound
-  } catch (error) {
-    console.log('index music error',error)
+const toggleSound = async () => {
+  const enabled = await toggleSoundPreference()
+  setSoundEnabled(enabled)
+  if (enabled) {
+    await playMusic(INDEX_MUSIC_KEY, INDEX_MUSIC_ASSET)
+  } else {
+    await stopAll()
   }
 }
 
-useEffect(()=>{
-  startMusic()
-  return ()=>{
-    indexMusic.current?.unloadAsync()
-    indexMusic.current = null
-  }
-},[])
+useFocusEffect(
+  useCallback(() => {
+    let isActive = true
+    const init = async () => {
+      const enabled = await ensureSoundPreferenceLoaded()
+      if (!isActive) return
+      setSoundEnabled(enabled)
+      if (enabled) {
+        await playMusic(INDEX_MUSIC_KEY, INDEX_MUSIC_ASSET)
+      } else {
+        await stopAll()
+      }
+    }
+
+    init()
+
+    return () => {
+      isActive = false
+      void stopIfKey(INDEX_MUSIC_KEY)
+    }
+  }, [])
+)
 
 
 
@@ -101,6 +115,15 @@ useEffect(()=>{
     resizeMode='cover'
     style={{flex:1,width:'100%'}}>
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <TouchableOpacity
+        onPress={toggleSound}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={soundEnabled ? 'Mute music' : 'Unmute music'}
+        style={{position:'absolute',top:10,right:15,zIndex:2000,elevation:5,backgroundColor:'rgba(0,0,0,0.35)',padding:8,borderRadius:20}}
+      >
+        <Ionicons name={soundEnabled ? 'volume-high' : 'volume-mute'} size={22} color="white" />
+      </TouchableOpacity>
      <View style={{flex:1,justifyContent:'start',alignItems:'center',width:"100%",gap:50,marginTop:70}}>
          <View style={{justifyContent:"center",display:'flex',flexDirection:'column',alignItems:'center',position:'relative',marginBottom:10}}>
         <Image source={require('../assets/images/brain.png')} style={{width:80,height:80}} />
