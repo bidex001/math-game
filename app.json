@@ -9,11 +9,11 @@
     "scheme": "game",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
+    "jsEngine": "hermes",
     "android": {
+      "jsEngine": "hermes",
       "versionCode": 4,
+      "enableProguardInReleaseBuilds": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
