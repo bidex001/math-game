@@ -3,17 +3,17 @@
     "name": "game",
     "slug": "game",
     "description": "A fast mental-math game with quick arithmetic challenges and score tracking.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "game",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
+    "jsEngine": "hermes",
     "android": {
+      "jsEngine": "hermes",
       "versionCode": 4,
+      "enableProguardInReleaseBuilds": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
