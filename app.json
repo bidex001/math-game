@@ -3,7 +3,7 @@
     "name": "game",
     "slug": "game",
     "description": "A fast mental-math game with quick arithmetic challenges and score tracking.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "game",
